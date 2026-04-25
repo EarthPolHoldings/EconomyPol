@@ -33,26 +33,6 @@ enum RuntimeConfigKey implements ReloadableConfiguration {
             "CUSTODIAL: route the unplaceable part of change into custodial instead."
     )),
 
-    WALLET_SECTION(SectionHeaderNode.of(
-            "wallet",
-            "Managed ender-wallet and live money scan behavior."
-    )),
-    WALLET_MANAGED_ENDER_WALLET_ENABLED(ReloadableConfigNode.of(
-            "wallet.managed-ender-wallet-enabled",
-            Boolean.class,
-            true
-    )),
-    WALLET_INCLUDE_LIVE_PLAYER_INVENTORY(ReloadableConfigNode.of(
-            "wallet.include-live-player-inventory",
-            Boolean.class,
-            true
-    )),
-    WALLET_INCLUDE_LIVE_ENDER_CHEST(ReloadableConfigNode.of(
-            "wallet.include-live-ender-chest",
-            Boolean.class,
-            true
-    )),
-
     CACHE_SECTION(SectionHeaderNode.of(
             "cache",
             "Display caches.",

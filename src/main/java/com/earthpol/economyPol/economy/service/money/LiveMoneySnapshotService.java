@@ -1,6 +1,5 @@
 package com.earthpol.economyPol.economy.service.money;
 
-import com.earthpol.economyPol.economy.config.PluginSettings;
 import com.earthpol.economyPol.economy.service.support.DenominationService;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -8,41 +7,24 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.function.Supplier;
-
 final class LiveMoneySnapshotService {
 
     private final DenominationService denominationService;
-    private final Supplier<PluginSettings.WalletSettings> walletSettingsSupplier;
     private final ShulkerDeliveryService shulkerDeliveryService;
 
     LiveMoneySnapshotService(
             DenominationService denominationService,
-            Supplier<PluginSettings.WalletSettings> walletSettingsSupplier,
             ShulkerDeliveryService shulkerDeliveryService
     ) {
         this.denominationService = denominationService;
-        this.walletSettingsSupplier = walletSettingsSupplier;
         this.shulkerDeliveryService = shulkerDeliveryService;
     }
 
     long scanPlayerMoney(Player player) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
-        long total = 0L;
-        if (walletSettings.includeLivePlayerInventory()) {
-            total += countPlayerInventoryMoney(player);
-        }
-        if (walletSettings.includeLiveEnderChest()) {
-            total += countPlayerEnderChestMoney(player);
-        }
-        return total;
+        return countPlayerInventoryMoney(player) + countPlayerEnderChestMoney(player);
     }
 
     long countPlayerInventoryMoney(Player player) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
-        if (!walletSettings.includeLivePlayerInventory()) {
-            return 0L;
-        }
         PlayerInventory inventory = player.getInventory();
         ItemStack offHand = inventory.getItemInOffHand();
         return countContents(inventory.getStorageContents())
@@ -52,10 +34,6 @@ final class LiveMoneySnapshotService {
     }
 
     long countPlayerEnderChestMoney(Player player) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
-        if (!walletSettings.includeLiveEnderChest()) {
-            return 0L;
-        }
         return countInventory(player.getEnderChest())
                 + shulkerDeliveryService.countMoneyInTopLevelGoldShulkers(player.getEnderChest().getContents());
     }
@@ -87,18 +65,12 @@ final class LiveMoneySnapshotService {
     }
 
     long scanPlayerMoney(LiveMoneySimulatedState simulatedState) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
-        long total = 0L;
-        if (walletSettings.includeLivePlayerInventory()) {
-            total += countContents(simulatedState.inventoryContents());
-            total += shulkerDeliveryService.countMoneyInTopLevelGoldShulkers(simulatedState.inventoryContents());
-            total += denominationService.valueOf(simulatedState.offHand());
-            total += shulkerDeliveryService.countMoneyInGoldShulker(simulatedState.offHand());
-        }
-        if (walletSettings.includeLiveEnderChest()) {
-            total += countContents(simulatedState.enderChestContents());
-            total += shulkerDeliveryService.countMoneyInTopLevelGoldShulkers(simulatedState.enderChestContents());
-        }
+        long total = countContents(simulatedState.inventoryContents());
+        total += shulkerDeliveryService.countMoneyInTopLevelGoldShulkers(simulatedState.inventoryContents());
+        total += denominationService.valueOf(simulatedState.offHand());
+        total += shulkerDeliveryService.countMoneyInGoldShulker(simulatedState.offHand());
+        total += countContents(simulatedState.enderChestContents());
+        total += shulkerDeliveryService.countMoneyInTopLevelGoldShulkers(simulatedState.enderChestContents());
         return total;
     }
 

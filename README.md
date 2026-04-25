@@ -55,8 +55,6 @@ By default, current implementation counts:
 - offhand
 - ender chest contents
 
-This can be narrowed through `wallet.include-live-player-inventory` and `wallet.include-live-ender-chest`.
-
 Current implementation does not count:
 
 - nested containers inside inventories or ender chests
@@ -583,11 +581,6 @@ numeric:
 routing:
   change-overflow-policy: CUSTODIAL
 
-wallet:
-  managed-ender-wallet-enabled: true
-  include-live-player-inventory: true
-  include-live-ender-chest: true
-
 cache:
   balancetop-ttl-seconds: 60
 
@@ -604,7 +597,6 @@ Safe runtime reload targets in `config.yml`:
 
 - `numeric.*`
 - `routing.change-overflow-policy`
-- `wallet.*`
 - `cache.*`
 - `logging.debug`
 - `logging.retention-policy`
@@ -625,18 +617,6 @@ So the intended model is:
 - restart the server for database or currency changes
 
 ### Important Settings
-
-#### `wallet.managed-ender-wallet-enabled`
-
-- enables the quit snapshot / offline wallet / join restore system
-
-#### `wallet.include-live-player-inventory`
-
-- includes live player inventory and offhand in spendable live money
-
-#### `wallet.include-live-ender-chest`
-
-- includes top-level ender chest contents in spendable live money
 
 #### `numeric.decimal-handling`
 

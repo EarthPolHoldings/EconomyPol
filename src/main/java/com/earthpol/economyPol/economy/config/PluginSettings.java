@@ -112,10 +112,6 @@ public final class PluginSettings {
         return runtime.changeOverflowPolicy();
     }
 
-    public WalletSettings wallet() {
-        return runtime.wallet();
-    }
-
     public CacheSettings cache() {
         return runtime.cache();
     }
@@ -178,12 +174,6 @@ public final class PluginSettings {
                 RuntimeConfigKey.ROUTING_CHANGE_OVERFLOW_POLICY.getPath()
         );
 
-        WalletSettings wallet = new WalletSettings(
-                RuntimeConfigKey.WALLET_MANAGED_ENDER_WALLET_ENABLED.getBool(),
-                RuntimeConfigKey.WALLET_INCLUDE_LIVE_PLAYER_INVENTORY.getBool(),
-                RuntimeConfigKey.WALLET_INCLUDE_LIVE_ENDER_CHEST.getBool()
-        );
-
         long balanceTopTtlSeconds = RuntimeConfigKey.CACHE_BALANCE_TOP_TTL_SECONDS.getLong();
         if (balanceTopTtlSeconds <= 0L) {
             throw new IllegalArgumentException("cache.balancetop-ttl-seconds must be positive.");
@@ -203,7 +193,6 @@ public final class PluginSettings {
         return new RuntimeSettings(
                 numeric,
                 changeOverflowPolicy,
-                wallet,
                 cache,
                 logging
         );
@@ -306,7 +295,6 @@ public final class PluginSettings {
     private record RuntimeSettings(
             NumericSettings numeric,
             ChangeOverflowPolicy changeOverflowPolicy,
-            WalletSettings wallet,
             CacheSettings cache,
             LoggingSettings logging
     ) {}

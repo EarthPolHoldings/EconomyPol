@@ -10,25 +10,21 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 final class LiveMoneySpendingService {
 
     private final DenominationService denominationService;
-    private final Supplier<PluginSettings.WalletSettings> walletSettingsSupplier;
     private final LiveMoneySnapshotService snapshotService;
     private final LiveMoneyDeliveryService deliveryService;
     private final ShulkerDeliveryService shulkerDeliveryService;
 
     LiveMoneySpendingService(
             DenominationService denominationService,
-            Supplier<PluginSettings.WalletSettings> walletSettingsSupplier,
             LiveMoneySnapshotService snapshotService,
             LiveMoneyDeliveryService deliveryService,
             ShulkerDeliveryService shulkerDeliveryService
     ) {
         this.denominationService = denominationService;
-        this.walletSettingsSupplier = walletSettingsSupplier;
         this.snapshotService = snapshotService;
         this.deliveryService = deliveryService;
         this.shulkerDeliveryService = shulkerDeliveryService;
@@ -167,12 +163,9 @@ final class LiveMoneySpendingService {
     }
 
     long removeFromLiveSources(Player player, long amount) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
         long remaining = amount;
-        if (walletSettings.includeLivePlayerInventory()) {
-            remaining = removeFromPlayerInventory(player.getInventory(), remaining);
-        }
-        if (remaining > 0L && walletSettings.includeLiveEnderChest()) {
+        remaining = removeFromPlayerInventory(player.getInventory(), remaining);
+        if (remaining > 0L) {
             remaining = removeFromInventory(player.getEnderChest(), remaining, false);
         }
         return amount - remaining;
@@ -248,12 +241,9 @@ final class LiveMoneySpendingService {
     }
 
     private long removeFromSimulatedSources(LiveMoneySimulatedState simulatedState, long amount) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
         long remaining = amount;
-        if (walletSettings.includeLivePlayerInventory()) {
-            remaining = removeFromSimulatedInventory(simulatedState, remaining);
-        }
-        if (remaining > 0L && walletSettings.includeLiveEnderChest()) {
+        remaining = removeFromSimulatedInventory(simulatedState, remaining);
+        if (remaining > 0L) {
             remaining = removeFromContents(simulatedState.enderChestContents(), remaining, simulatedState, false);
         }
         return amount - remaining;
@@ -364,51 +354,41 @@ final class LiveMoneySpendingService {
     }
 
     private OverpayCandidate findSmallestOverpayCandidate(Player player, long remaining) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
         OverpayCandidate best = null;
-        if (walletSettings.includeLivePlayerInventory()) {
-            best = findSmallestOverpayCandidateInGoldShulkers(
-                    player.getInventory().getStorageContents(),
-                    remaining,
-                    OverpaySourceType.INVENTORY_SHULKER,
-                    best
-            );
-            best = findSmallestOverpayCandidateInOffHandGoldShulker(player.getInventory().getItemInOffHand(), remaining, best);
-            best = findSmallestOverpayCandidate(player.getInventory().getStorageContents(), remaining, OverpaySourceType.INVENTORY, best);
-            ItemStack offHand = player.getInventory().getItemInOffHand();
-            if (denominationService.isMoney(offHand)) {
-                Denomination denomination = denominationService.find(offHand.getType()).orElseThrow();
-                if (denomination.baseUnits() > remaining && (best == null || denomination.baseUnits() < best.denomination().baseUnits())) {
-                    best = new OverpayCandidate(OverpaySourceType.OFFHAND, -1, -1, denomination);
-                }
+        best = findSmallestOverpayCandidateInGoldShulkers(
+                player.getInventory().getStorageContents(),
+                remaining,
+                OverpaySourceType.INVENTORY_SHULKER,
+                best
+        );
+        best = findSmallestOverpayCandidateInOffHandGoldShulker(player.getInventory().getItemInOffHand(), remaining, best);
+        best = findSmallestOverpayCandidate(player.getInventory().getStorageContents(), remaining, OverpaySourceType.INVENTORY, best);
+        ItemStack offHand = player.getInventory().getItemInOffHand();
+        if (denominationService.isMoney(offHand)) {
+            Denomination denomination = denominationService.find(offHand.getType()).orElseThrow();
+            if (denomination.baseUnits() > remaining && (best == null || denomination.baseUnits() < best.denomination().baseUnits())) {
+                best = new OverpayCandidate(OverpaySourceType.OFFHAND, -1, -1, denomination);
             }
         }
-        if (walletSettings.includeLiveEnderChest()) {
-            best = findSmallestOverpayCandidateInGoldShulkers(player.getEnderChest(), remaining, OverpaySourceType.ENDER_CHEST_SHULKER, best);
-            best = findSmallestOverpayCandidate(player.getEnderChest(), remaining, OverpaySourceType.ENDER_CHEST, best);
-        }
+        best = findSmallestOverpayCandidateInGoldShulkers(player.getEnderChest(), remaining, OverpaySourceType.ENDER_CHEST_SHULKER, best);
+        best = findSmallestOverpayCandidate(player.getEnderChest(), remaining, OverpaySourceType.ENDER_CHEST, best);
         return best;
     }
 
     private OverpayCandidate findSmallestOverpayCandidate(LiveMoneySimulatedState simulatedState, long remaining) {
-        PluginSettings.WalletSettings walletSettings = walletSettingsSupplier.get();
         OverpayCandidate best = null;
-        if (walletSettings.includeLivePlayerInventory()) {
-            best = findSmallestOverpayCandidateInGoldShulkers(simulatedState.inventoryContents(), remaining, OverpaySourceType.INVENTORY_SHULKER, best);
-            best = findSmallestOverpayCandidateInOffHandGoldShulker(simulatedState.offHand(), remaining, best);
-            best = findSmallestOverpayCandidate(simulatedState.inventoryContents(), remaining, OverpaySourceType.INVENTORY, best);
-            ItemStack offHand = simulatedState.offHand();
-            if (denominationService.isMoney(offHand)) {
-                Denomination denomination = denominationService.find(offHand.getType()).orElseThrow();
-                if (denomination.baseUnits() > remaining && (best == null || denomination.baseUnits() < best.denomination().baseUnits())) {
-                    best = new OverpayCandidate(OverpaySourceType.OFFHAND, -1, -1, denomination);
-                }
+        best = findSmallestOverpayCandidateInGoldShulkers(simulatedState.inventoryContents(), remaining, OverpaySourceType.INVENTORY_SHULKER, best);
+        best = findSmallestOverpayCandidateInOffHandGoldShulker(simulatedState.offHand(), remaining, best);
+        best = findSmallestOverpayCandidate(simulatedState.inventoryContents(), remaining, OverpaySourceType.INVENTORY, best);
+        ItemStack offHand = simulatedState.offHand();
+        if (denominationService.isMoney(offHand)) {
+            Denomination denomination = denominationService.find(offHand.getType()).orElseThrow();
+            if (denomination.baseUnits() > remaining && (best == null || denomination.baseUnits() < best.denomination().baseUnits())) {
+                best = new OverpayCandidate(OverpaySourceType.OFFHAND, -1, -1, denomination);
             }
         }
-        if (walletSettings.includeLiveEnderChest()) {
-            best = findSmallestOverpayCandidateInGoldShulkers(simulatedState.enderChestContents(), remaining, OverpaySourceType.ENDER_CHEST_SHULKER, best);
-            best = findSmallestOverpayCandidate(simulatedState.enderChestContents(), remaining, OverpaySourceType.ENDER_CHEST, best);
-        }
+        best = findSmallestOverpayCandidateInGoldShulkers(simulatedState.enderChestContents(), remaining, OverpaySourceType.ENDER_CHEST_SHULKER, best);
+        best = findSmallestOverpayCandidate(simulatedState.enderChestContents(), remaining, OverpaySourceType.ENDER_CHEST, best);
         return best;
     }
 

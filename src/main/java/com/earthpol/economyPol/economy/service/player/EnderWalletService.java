@@ -62,9 +62,6 @@ public final class EnderWalletService {
     }
 
     public void snapshotOnQuit(Player player) {
-        if (!plugin.settings().wallet().managedEnderWalletEnabled()) {
-            return;
-        }
         schedulerService.runOnPlayerEntityScheduler(player, () -> snapshotOnQuitOnPlayerEntityScheduler(player), "ender-wallet-snapshot-on-quit");
     }
 
@@ -80,9 +77,6 @@ public final class EnderWalletService {
     }
 
     public long syncSnapshotOnJoin(Player player) {
-        if (!plugin.settings().wallet().managedEnderWalletEnabled()) {
-            return 0L;
-        }
         if (!playerMoneyLockService.lock(player.getUniqueId())) {
             loggers.logWarn("ender-wallet-sync-skipped " + loggers.playerContext(player) + " reason=already_locked",
                     LogType.AUDIT);
